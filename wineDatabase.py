@@ -17,12 +17,9 @@ class WineDatabase:
     def init_table(self):
         self.cursor.execute('''
             create table cantina(
-                nome varchar not null primary key
-            )
-        ''')
-        self.cursor.execute('''
-            create table vitigno(
-                nome varchar not null primary key
+                nome varchar not null primary key,
+                stato varchar not null,
+                regione varchar
             )
         ''')
         self.cursor.execute('''
@@ -31,14 +28,11 @@ class WineDatabase:
                 annata year not null,
                 cantina varchar not null,
                 prezzo decimal(6,2) check (prezzo > 0),
-                vitigno varchar not null,
                 vinificazione varchar check (vinificazione in ('fermo', 'frizzante', 'spumante')),
                 colore varchar check (colore in ('bianco', 'rosato', 'rosso')),
-                nazionale integer check (nazionale in (0, 1)),
-                regionale integer check (regionale in (0, 1)),
-                macerato integer check (macerato in (0, 1)),
+                macerato integer check (macerato in (0, 1)) default 0,
+                listino integer check (listino in (0, 1)) default 1,
                 foreign key (cantina) references cantina(nome),
-                foreign key (vitigno) references vitigno(nome),
                 primary key (nome, annata, cantina)
             )
         ''')
