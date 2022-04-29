@@ -1,0 +1,28 @@
+{
+  "name": "wine_manager_app",
+  "version": "1.0.0",
+  "description": "An electron-based wine managing app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w sqlite3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FraBomba6/Wine_Manager.git"
+  },
+  "author": "FraBomba6",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FraBomba6/Wine_Manager/issues"
+  },
+  "homepage": "https://github.com/FraBomba6/Wine_Manager#readme",
+  "devDependencies": {
+    "electron": "^18.1.0",
+    "electron-rebuild": "^3.2.7"
+  },
+  "dependencies": {
+    "knex": "^2.0.0",
+    "sqlite3": "^5.0.6"
+  }
+}
