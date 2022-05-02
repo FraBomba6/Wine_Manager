@@ -3,7 +3,10 @@ body {
 }
 
 .menu-icon {
-    width: 50px;
+    min-width: 30px;
+    max-width: 50px;
+    width: 5%;
+    margin: 5px;
 }
 
 .vert-center {
@@ -16,18 +19,15 @@ body {
 
 .floating-menu {
     background: white;
-    padding: 5px;
-    width: 70px;
+    min-width: 30px;
+    max-width: 50px;
+    padding: 1%;
+    width: 5%;
     z-index: 100;
     border-radius: 30px;
+    text-align: center;
 }
 
 .floating-menu a {
-    width: 50px;
-    border-style: solid;
-    border-color: black;
-    position: relative;
-    left: 50%;
-    -ms-transform: translateX(-25px);
-    transform: translateX(-25px);
+    width: 30px;
 }
