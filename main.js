@@ -27,10 +27,12 @@ function createWindow() {
 app.whenReady().then(() => {
     const win = createWindow();
     ipcMain.on("mainWindowLoaded", () => {
-        let result = knex("vini").where({
-            "cantina": "Tommasi"
-        }).select("nome")
-        result.then(function(rows){
+        let headers = knex.raw("PRAGMA table_info(vini);");
+        headers.then(function (rows) {
+            win.webContents.send("headersSent", rows)
+        })
+        let entries = knex("vini").select("*")
+        entries.then(function(rows) {
             win.webContents.send("resultSent", rows);
         });
     });

@@ -1,16 +1,13 @@
 body {
-    background-color: rgba(87, 28, 30, 0.65);
+    background-color: rgba(87, 28, 30, 0.8);
 }
 
 .menu-icon {
-    min-width: 30px;
-    max-width: 50px;
-    width: 5%;
-    margin: 5px;
+    width: 60%;
+    margin: 2%;
 }
 
 .vert-center {
-    margin: 0;
     position: absolute;
     top: 50%;
     -ms-transform: translateY(-50%);
@@ -18,16 +15,36 @@ body {
 }
 
 .floating-menu {
-    background: white;
-    min-width: 30px;
-    max-width: 50px;
-    padding: 1%;
-    width: 5%;
+    left: 0.5%;
+    background: rgba(255, 255, 255, 0.75);
+    width: 3.5%;
+    padding: 0.25%;
     z-index: 100;
     border-radius: 30px;
     text-align: center;
 }
 
-.floating-menu a {
-    width: 30px;
+table {
+    background-color: rgba(255, 255, 255, 0.75);
+    width: 94.5%;
+    height: 99%;
+    border-radius: 30px;
+    left: 5%;
+}
+
+th, td {
+    text-transform: capitalize;
+    text-align: center;
+    width: 12.5%;
+    border: 1px solid black;
+}
+
+thead, tbody {
+    display: block;
+    border: 1px solid black;
+}
+
+tbody {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
