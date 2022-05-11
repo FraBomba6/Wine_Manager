@@ -1,11 +1,11 @@
 const electron = require("electron")
 const ipc = electron.ipcRenderer;
 
-function generate_input_text_element(name) {
+function generate_input_text_element(name, value) {
     let input = document.createElement("input");
     input.type = "text";
     input.name = name;
-    input.value = name;
+    input.value = value;
     return input;
 }
 
@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function(){
         let row = document.createElement("tr");
         for(let i = 0; i < result.length; i++) {
             let heading = document.createElement('th');
+            heading.id = result[i]["name"] + "Header";
             heading.innerHTML = result[i]["name"];
             row.appendChild(heading);
         }
@@ -29,19 +30,19 @@ document.addEventListener("DOMContentLoaded", function(){
         for(let i = 0; i < result.length; i++) {
             let tr = document.createElement("tr");
             let nome = document.createElement("td");
-            let nome_input = generate_input_text_element(result[i]["nome"])
+            let nome_input = generate_input_text_element("nome", result[i]["nome"])
             nome.appendChild(nome_input);
             tr.appendChild(nome);
             let annata = document.createElement("td");
-            let annata_input = generate_input_text_element(result[i]["annata"]);
+            let annata_input = generate_input_text_element("annata", result[i]["annata"]);
             annata.appendChild(annata_input);
             tr.appendChild(annata);
             let cantina = document.createElement("td");
-            let cantina_input = generate_input_text_element(result[i]["cantina"]);
+            let cantina_input = generate_input_text_element("cantina", result[i]["cantina"]);
             cantina.appendChild(cantina_input);
             tr.appendChild(cantina);
             let prezzo = document.createElement("td");
-            let prezzo_input = generate_input_text_element(result[i]["prezzo"]);
+            let prezzo_input = generate_input_text_element("prezzo", result[i]["prezzo"]);
             prezzo.appendChild(prezzo_input);
             tr.appendChild(prezzo);
             let vinificazione = document.createElement("td");

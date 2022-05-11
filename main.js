@@ -10,7 +10,6 @@ let knex = require("knex")({
 
 function createWindow() {
     const win = new BrowserWindow({
-        fullscreen: true,
         autoHideMenuBar: true,
         show: false,
         webPreferences: {
