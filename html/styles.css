@@ -89,3 +89,15 @@ textarea[name="price"], input[name="year"] {
 .annataHeader, .prezzoHeader {
     width: 7%;
 }
+
+#newWineError, #newProducerError {
+    color: red;
+    text-transform: none;
+    font-weight: bold;
+    opacity: 1;
+    transition: opacity 15s;
+}
+
+#newWineError.fadeOut, #newProducerError.fadeOut{
+    opacity: 0;
+}

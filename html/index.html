@@ -1,3 +1,4 @@
+<!--TODO improve textarea -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,11 +30,11 @@
                 <th>Macerato</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="newWineBody">
             <tr>
                 <td><textarea id="newWineName"></textarea></td>
                 <td><input type="number" value="1950" name="year" id="newWineYear"></td>
-                <td id="newWineProducer"></td>
+                <td id="newWineProducerTd"></td>
                 <td><textarea id="newWinePrice" name="price"></textarea></td>
                 <td>
                     <select id="newWineType">
@@ -53,6 +54,9 @@
             </tr>
             <tr>
                 <td colspan="7"><input type="button" value="Aggiungi" id="newWineAdd"></td>
+            </tr>
+            <tr>
+                <td colspan="7" id="newWineError"></td>
             </tr>
         </tbody>
     </table>
