@@ -5,10 +5,34 @@ let knex = require("knex")({
     client: "sqlite3",
     connection: {
         filename: "./vini.db"
-    }
+    },
+    useNullAsDefault: true
 });
 
 let producerArray = [];
+let producerSelect = null;
+
+let blockEvent = false;
+let currentWineName = "";
+let currentWineYear = "";
+let currentWineProducer = "";
+let currentProducerName = "";
+
+function updateCurrentWine(event) {
+    let row = event.target.parentNode.parentNode;
+    currentWineName = row.querySelector("[name='name']").value;
+    currentWineYear = row.querySelector("[name='year']").value;
+    currentWineProducer = row.querySelector("[name='producer']").value;
+}
+
+function updateCurrentProducer(event) {
+    let checkInterval = setInterval(() => {
+        if (!blockEvent) {
+            currentProducerName = event.target.parentNode.parentNode.querySelector("[name='name']").value;
+            clearInterval(checkInterval);
+        }
+    }, 1);
+}
 
 function generate_select_option(value, toUpper=false) {
     let option = document.createElement("option");
@@ -19,8 +43,12 @@ function generate_select_option(value, toUpper=false) {
     return option;
 }
 
-function generate_table_cell_with_content(contentNode) {
+function generate_table_cell_with_content(contentNode, type="wine") {
     let td = document.createElement("td");
+    if (type === "wine")
+        contentNode.addEventListener('change', commitWineChanges);
+    else
+        contentNode.addEventListener('change', commitProducerChanges);
     td.appendChild(contentNode);
     return td;
 }
@@ -37,6 +65,10 @@ function generate_delete_button(value, className) {
     deleteButton.type = "button";
     deleteButton.value = value;
     deleteButton.classList.add(className);
+    if (className === "deleteWine")
+        deleteButton.addEventListener('click', deleteWine);
+    else
+        deleteButton.addEventListener('click', deleteProducer);
     return deleteButton;
 }
 
@@ -58,24 +90,29 @@ function generate_wine_tbl_header(queryResult) {
     db_table.appendChild(thead);
 }
 
-function generate_producer_tbl_body(queryResult) {
+function generate_producer_list_and_select(queryResult) {
+    producerSelect = document.createElement("select");
+    producerSelect.name = "producer";
     for(let i = 0; i < queryResult.length; i++) {
         producerArray.push(queryResult[i]["nome"]);
+        producerSelect.appendChild(generate_select_option(producerArray[i]));
     }
-    if (document.body.contains(document.getElementById("cantinaDbBody"))) {
-        let tbody = document.getElementById("cantinaDbBody");
-        for (let i = 0; i < queryResult.length; i++) {
-            let tr = document.createElement("tr");
-            let nameTd = generate_table_cell_with_content(generate_input_text_element("name", queryResult[i]["nome"]));
-            let stateTd = generate_table_cell_with_content(generate_input_text_element("state", queryResult[i]["stato"]));
-            let regionTd = generate_table_cell_with_content(generate_input_text_element("region", queryResult[i]["regione"]));
-            tr.appendChild(nameTd);
-            tr.appendChild(stateTd);
-            tr.appendChild(regionTd);
-            let tdDelete = generate_table_cell_with_content(generate_delete_button("Elimina", "deleteProducer"));
-            tr.appendChild(tdDelete);
-            tbody.appendChild(tr);
-        }
+}
+
+function generate_producer_tbl_body(queryResult) {
+    let tbody = document.getElementById("cantinaDbBody");
+    for (let i = 0; i < queryResult.length; i++) {
+        let tr = document.createElement("tr");
+        tr.addEventListener("focusin", updateCurrentProducer);
+        let nameTd = generate_table_cell_with_content(generate_input_text_element("name", queryResult[i]["nome"]), "producer");
+        let stateTd = generate_table_cell_with_content(generate_input_text_element("state", queryResult[i]["stato"]), "producer");
+        let regionTd = generate_table_cell_with_content(generate_input_text_element("region", queryResult[i]["regione"]), "producer");
+        tr.appendChild(nameTd);
+        tr.appendChild(stateTd);
+        tr.appendChild(regionTd);
+        let tdDelete = generate_table_cell_with_content(generate_delete_button("Elimina", "deleteProducer"));
+        tr.appendChild(tdDelete);
+        tbody.appendChild(tr);
     }
 }
 
@@ -83,16 +120,9 @@ function generate_wine_tbl_body(queryResult) {
     let dbTbl = document.getElementById("viniDb");
     let tbody = document.createElement("tbody");
 
-    let producerSelect = document.createElement("select");
-    producerSelect.name = "producer";
-    for (let i = 0; i < producerArray.length; i++)
-        producerSelect.appendChild(generate_select_option(producerArray[i]));
-
-    let newWineProducer_td = document.getElementById("newWineProducer");  //TODO move these two lines
-    newWineProducer_td.appendChild(producerSelect.cloneNode(true));
-
     for (let i = 0; i < queryResult.length; i++) {
         let tr = document.createElement("tr");
+        tr.addEventListener("focusin", updateCurrentWine);
         let nameTd = generate_table_cell_with_content(generate_input_text_element("name", queryResult[i]["nome"]));
         tr.appendChild(nameTd);
 
@@ -134,7 +164,7 @@ function generate_wine_tbl_body(queryResult) {
         tr.appendChild(typeTd);
 
         let colorSelect = document.createElement("select");
-        colorSelect.name = "colore";
+        colorSelect.name = "color";
 
         let colorSelectOption1 = generate_select_option("rosso", true);
         let colorSelectOption2 = generate_select_option("bianco", true);
@@ -157,6 +187,7 @@ function generate_wine_tbl_body(queryResult) {
         tr.appendChild(colorTd);
 
         let maceratedCheck = document.createElement("input");
+        maceratedCheck.name = "macerated";
         maceratedCheck.setAttribute("type", "checkbox");
         if (queryResult[i]["macerato"] === 1)
             maceratedCheck.click();
@@ -164,6 +195,7 @@ function generate_wine_tbl_body(queryResult) {
         tr.appendChild(maceratedTd);
 
         let inListCheck = document.createElement("input");
+        inListCheck.name = "inList"
         inListCheck.setAttribute("type", "checkbox");
         if (queryResult[i]["listino"] === 1)
             inListCheck.click();
@@ -187,31 +219,44 @@ document.addEventListener("DOMContentLoaded", function(){
     }
     let producers = knex("cantina").select("*").orderBy("nome");
     producers.then((rows) => {
-        generate_producer_tbl_body(rows)
+        generate_producer_list_and_select(rows);
+        if (document.body.contains(document.getElementById("cantinaDbContainer"))) {
+            generate_producer_tbl_body(rows);
+            document.dispatchEvent(new Event('producerTblCreated'));
+        }
     });
     if (document.body.contains(document.getElementById("viniDb"))) {
-        let wines = knex("vini").select("*");
+        let wines = knex("vini").select("*").orderBy("nome");
         wines.then((rows) => {
             generate_wine_tbl_body(rows);
-            document.dispatchEvent(new Event('tblCreated'));
+            append_producer_select();
+            document.dispatchEvent(new Event('wineTblCreated'));
         });
     }
 });
 
-document.addEventListener("tblCreated", attachEventListeners);
+function append_producer_select() {
+    let newWineProducerTd = document.getElementById("newWineProducerTd");  //TODO move these two lines
+    let newWineProducerSelect = producerSelect.cloneNode(true);
+    newWineProducerSelect.id = "newWineProducer";
+    newWineProducerTd.appendChild(newWineProducerSelect);
+}
 
-function attachEventListeners() {
+document.addEventListener("wineTblCreated", attachWineEventListener);
+document.addEventListener("producerTblCreated", attachProducerEventListener);
+
+function attachWineEventListener() {
     let addNewWineButton = document.getElementById("newWineAdd");
     addNewWineButton.addEventListener('click', addNewWine);
+}
 
-    let deleteButtons = document.getElementsByClassName("deleteWine");
-    Array.from(deleteButtons).forEach((button) => {
-        button.addEventListener('click', deleteWine);
-    });
+function attachProducerEventListener() {
+    let addNewProducerButton = document.getElementById("newProducerAdd");
+    addNewProducerButton.addEventListener('click', addNewProducer);
 }
 
 function deleteWine(event) {
-    let row = event.target.parentNode.parentNode
+    let row = event.target.parentNode.parentNode;
     let name = row.querySelector("[name='name']").value;
     let year = row.querySelector("[name='year']").value;
     let producer = row.querySelector("[name='producer']").value;
@@ -230,5 +275,116 @@ function addNewWine() {
     let price = document.getElementById('newWinePrice').value;
     let type = document.getElementById('newWineType').value;
     let color = document.getElementById('newWineColor').value;
-    let macerated = document.getElementById('newWineMacerated').value;
+    let macerated = document.getElementById('newWineMacerated').checked;
+
+    knex.raw("PRAGMA foreign_keys = ON;").then(() => {
+        knex("vini").insert({
+            nome: name,
+            annata: year,
+            cantina: producer,
+            prezzo: price,
+            vinificazione: type,
+            colore: color,
+            macerato: macerated,
+            listino: 1
+        }).then(() => ipc.send('force_reload')).catch(manageError);
+    });
+}
+
+function commitWineChanges(event) {
+    let row = event.target.parentNode.parentNode;
+    let name = row.querySelector("[name='name']").value;
+    let year = row.querySelector("[name='year']").value;
+    let producer = row.querySelector("[name='producer']").value;
+    let updateQuery = {}
+    switch (event.target.name) {
+        case "name":
+            updateQuery["nome"] = name;
+            break;
+        case "year":
+            updateQuery["annata"] = year;
+            break;
+        case "producer":
+            updateQuery["cantina"] = producer;
+            break;
+        case "price":
+            updateQuery["prezzo"] = row.querySelector("[name='price']").value;
+            break;
+        case "type":
+            updateQuery["vinificazione"] = row.querySelector("[name='type']").value;
+            break;
+        case "color":
+            updateQuery["colore"] = row.querySelector("[name='color']").value;
+            break;
+        case "macerated":
+            updateQuery["macerato"] = row.querySelector("[name='macerated']").checked;
+            break;
+        case "inList":
+            updateQuery["listino"] = row.querySelector("[name='inList']").checked;
+            break;
+    }
+    knex("vini").where({
+        nome: currentWineName,
+        annata: currentWineYear,
+        cantina: currentWineProducer
+    }).update(updateQuery).then();
+}
+
+function deleteProducer(event) {
+    let row = event.target.parentNode.parentNode;
+    let name = row.querySelector("[name='name']").value;
+    knex.raw("PRAGMA foreign_keys = ON;").then(() => {
+        knex("cantina").where({
+            nome: name
+        }).del().then(() => ipc.send('force_reload'));
+    });
+}
+
+function addNewProducer() {
+    let name = document.getElementById('newProducerName').value;
+    let state = document.getElementById('newProducerState').value;
+    let region = document.getElementById('newProducerRegion').value;
+
+    knex.raw("PRAGMA foreign_keys = ON;").then(() => {
+        knex("cantina").insert({
+            nome: name,
+            stato: state,
+            regione: region
+        }).then(() => ipc.send('force_reload'));
+    });
+}
+
+function commitProducerChanges(event) {
+    let row = event.target.parentNode.parentNode;
+    let name = row.querySelector("[name='name']").value;
+    let updateQuery = {}
+    switch (event.target.name) {
+        case "name":
+            updateQuery["nome"] = name;
+            break;
+        case "state":
+            updateQuery["stato"] = row.querySelector("[name='state']").value;
+            break;
+        case "region":
+            updateQuery["regione"] = row.querySelector("[name='region']").value;
+            break;
+    }
+    blockEvent = true;
+    knex.raw("PRAGMA foreign_keys = ON;").then(() => {
+        knex("cantina").where({
+            nome: currentProducerName
+        }).update(updateQuery).then(() => blockEvent = false);
+    });
+}
+
+function manageError(error) {
+    if (error.errno === 19) {
+        let td = document.getElementById("newWineError");
+        td.innerHTML = "Errore! Esiste già un vino con questo nome, questo anno e questa cantina";
+        td.classList.toggle("fadeOut");
+        setTimeout(() => {
+            td.classList.toggle("fadeOut");
+            td.innerHTML = "";
+        }, 9000);
+    }
 }

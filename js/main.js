@@ -10,7 +10,7 @@ function createWindow() {
         }
     });
 
-    win.loadFile('index.html').then(() => {
+    win.loadFile('html/index.html').then(() => {
         win.maximize();
         win.show();
     })
