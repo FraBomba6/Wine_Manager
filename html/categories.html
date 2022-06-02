@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>Gestore vini</title>
+</head>
+<body>
+<nav class="floating-menu vert-center">
+    <a href="index.html"><img class="menu-icon" src="../imgs/wine-bottle-glass.png" alt="Wine icon"></a>
+    <a href="cantina.html"><img class="menu-icon winery" src="../imgs/village.png" alt="List icon"></a>
+    <a href="categories.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
+    <a href="list.html"><img class="menu-icon" src="../imgs/document-approve.png" alt="List icon"></a>
+</nav>
+<div id="formContainer">
+    <form id="form0">
+        <fieldset>
+            <label for="categoryName">Nome della categoria:</label>
+            <input type="text" id="categoryName" name="categoryName">
+        </fieldset>
+        <fieldset>
+            <label for="wineType">Vinificazione</label>
+            <select id="wineType" name="wineType">
+                <option value=""></option>
+                <option value="fermo">Fermo</option>
+                <option value="frizzante">Frizzante</option>
+                <option value="spumante">Spumante</option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label for="wineColor">Colore</label>
+            <select id="wineColor" name="wineColor">
+                <option value=""></option>
+                <option value="rosso">Rosso</option>
+                <option value="bianco">Bianco</option>
+                <option value="rose">Rosé</option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label for="wineryState">Stato</label>
+            <select id="wineryState" name="wineryState">
+                <option value=""></option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label for="wineryRegion">Regione</label>
+            <select id="wineryRegion" name="wineryRegion">
+                <option value=""></option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label for="wineContains">Parole chiave (,)</label>
+            <input type="text" id="wineContains" name="wineContains">
+        </fieldset>
+        <fieldset>
+            <label for="removeCategory">Eliminare?</label>
+            <input  type="button" id="removeCategory" value="Elimina">
+        </fieldset>
+    </form>
+    <div>
+        <input type="button" id="addFormButton" value="Aggiungi">
+    </div>
+</div>
+</body>
+</html>

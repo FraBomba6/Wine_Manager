@@ -6,12 +6,14 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
     <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <title>Test</title>
+    <title>Gestore vini</title>
 </head>
 <body>
 <nav class="floating-menu vert-center">
-    <a href="index.html"><img class="menu-icon" src="../imgs/grapes.png" alt="Grapes icon"></a>
-    <a href="cantina.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
+    <a href="index.html"><img class="menu-icon" src="../imgs/wine-bottle-glass.png" alt="Wine icon"></a>
+    <a href="cantina.html"><img class="menu-icon winery" src="../imgs/village.png" alt="List icon"></a>
+    <a href="categories.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
+    <a href="list.html"><img class="menu-icon" src="../imgs/document-approve.png" alt="List icon"></a>
 </nav>
 <div id="cantinaDbContainer" class="dbContainer">
     <table id="cantinaDb">
@@ -35,17 +37,17 @@
             <th>Regione</th>
         </tr>
         </thead>
-        <tbody id="newProducerBody">
+        <tbody id="newWineryBody">
         <tr>
-            <td><textarea id="newProducerName"></textarea></td>
-            <td><textarea id="newProducerState"></textarea></td>
-            <td><textarea id="newProducerRegion"></textarea></td>
+            <td><textarea id="newWineryName"></textarea></td>
+            <td><textarea id="newWineryState"></textarea></td>
+            <td><textarea id="newWineryRegion"></textarea></td>
         </tr>
         <tr>
-            <td colspan="3"><input type="button" value="Aggiungi" id="newProducerAdd"></td>
+            <td colspan="3"><input type="button" value="Aggiungi" id="newWineryAdd"></td>
         </tr>
         <tr>
-            <td colspan="3" id="newProducerError"></td>
+            <td colspan="3" id="newWineryError"></td>
         </tr>
         </tbody>
     </table>

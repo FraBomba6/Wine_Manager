@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "knex": "^2.0.0",
-    "sqlite3": "^5.0.6"
+    "sqlite3": "^5.0.6",
+    "multi.js": "^0.5.3"
   }
 }

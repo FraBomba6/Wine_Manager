@@ -1,4 +1,4 @@
-const electron = require("electron")
+const electron = require("electron");
 const ipc = electron.ipcRenderer;
 
 let knex = require("knex")({
@@ -9,29 +9,51 @@ let knex = require("knex")({
     useNullAsDefault: true
 });
 
-let producerArray = [];
-let producerSelect = null;
+let wineryArray = [];
+let winerySelect = null;
 
 let blockEvent = false;
 let currentWineName = "";
 let currentWineYear = "";
-let currentWineProducer = "";
-let currentProducerName = "";
+let currentWineWinery = "";
+let currentWineryName = "";
+let currentFormName = "";
 
 function updateCurrentWine(event) {
     let row = event.target.parentNode.parentNode;
     currentWineName = row.querySelector("[name='name']").value;
     currentWineYear = row.querySelector("[name='year']").value;
-    currentWineProducer = row.querySelector("[name='producer']").value;
+    currentWineWinery = row.querySelector("[name='winery']").value;
 }
 
-function updateCurrentProducer(event) {
+function updateCurrentWinery(event) {
     let checkInterval = setInterval(() => {
         if (!blockEvent) {
-            currentProducerName = event.target.parentNode.parentNode.querySelector("[name='name']").value;
+            currentWineryName = event.target.parentNode.parentNode.querySelector("[name='name']").value;
             clearInterval(checkInterval);
         }
     }, 1);
+}
+
+function updateCurrentForm(event) {
+    let form = event.target.parentNode.parentNode;
+    currentFormName = form.querySelector("[name='categoryName']").value;
+}
+
+function generate_state_options(queryResult) {
+    let select = document.getElementById("wineryState");
+    for(let i = 0; i < queryResult.length; i++) {
+        let option = generate_select_option(queryResult[i]["stato"]);
+        select.appendChild(option);
+    }
+}
+
+function generate_region_options(queryResult) {
+    let select = document.getElementById("wineryRegion");
+    for(let i = 0; i < queryResult.length; i++) {
+        let option = generate_select_option(queryResult[i]["regione"]);
+        select.appendChild(option);
+    }
 }
 
 function generate_select_option(value, toUpper=false) {
@@ -48,7 +70,7 @@ function generate_table_cell_with_content(contentNode, type="wine") {
     if (type === "wine")
         contentNode.addEventListener('change', commitWineChanges);
     else
-        contentNode.addEventListener('change', commitProducerChanges);
+        contentNode.addEventListener('change', commitWineryChanges);
     td.appendChild(contentNode);
     return td;
 }
@@ -68,7 +90,7 @@ function generate_delete_button(value, className) {
     if (className === "deleteWine")
         deleteButton.addEventListener('click', deleteWine);
     else
-        deleteButton.addEventListener('click', deleteProducer);
+        deleteButton.addEventListener('click', deleteWinery);
     return deleteButton;
 }
 
@@ -90,27 +112,27 @@ function generate_wine_tbl_header(queryResult) {
     db_table.appendChild(thead);
 }
 
-function generate_producer_list_and_select(queryResult) {
-    producerSelect = document.createElement("select");
-    producerSelect.name = "producer";
+function generate_winery_list_and_select(queryResult) {
+    winerySelect = document.createElement("select");
+    winerySelect.name = "winery";
     for(let i = 0; i < queryResult.length; i++) {
-        producerArray.push(queryResult[i]["nome"]);
-        producerSelect.appendChild(generate_select_option(producerArray[i]));
+        wineryArray.push(queryResult[i]["nome"]);
+        winerySelect.appendChild(generate_select_option(wineryArray[i]));
     }
 }
 
-function generate_producer_tbl_body(queryResult) {
+function generate_winery_tbl_body(queryResult) {
     let tbody = document.getElementById("cantinaDbBody");
     for (let i = 0; i < queryResult.length; i++) {
         let tr = document.createElement("tr");
-        tr.addEventListener("focusin", updateCurrentProducer);
-        let nameTd = generate_table_cell_with_content(generate_input_text_element("name", queryResult[i]["nome"]), "producer");
-        let stateTd = generate_table_cell_with_content(generate_input_text_element("state", queryResult[i]["stato"]), "producer");
-        let regionTd = generate_table_cell_with_content(generate_input_text_element("region", queryResult[i]["regione"]), "producer");
+        tr.addEventListener("focusin", updateCurrentWinery);
+        let nameTd = generate_table_cell_with_content(generate_input_text_element("name", queryResult[i]["nome"]), "winery");
+        let stateTd = generate_table_cell_with_content(generate_input_text_element("state", queryResult[i]["stato"]), "winery");
+        let regionTd = generate_table_cell_with_content(generate_input_text_element("region", queryResult[i]["regione"]), "winery");
         tr.appendChild(nameTd);
         tr.appendChild(stateTd);
         tr.appendChild(regionTd);
-        let tdDelete = generate_table_cell_with_content(generate_delete_button("Elimina", "deleteProducer"));
+        let tdDelete = generate_table_cell_with_content(generate_delete_button("Elimina", "deleteWinery"));
         tr.appendChild(tdDelete);
         tbody.appendChild(tr);
     }
@@ -133,10 +155,10 @@ function generate_wine_tbl_body(queryResult) {
         let yearTd = generate_table_cell_with_content(yearInput)
         tr.appendChild(yearTd);
 
-        let producerSelectCopy = producerSelect.cloneNode(true);
-        producerSelectCopy.value = queryResult[i]["cantina"];
-        let producerTd = generate_table_cell_with_content(producerSelectCopy);
-        tr.appendChild(producerTd);
+        let winerySelectCopy = winerySelect.cloneNode(true);
+        winerySelectCopy.value = queryResult[i]["cantina"];
+        let wineryTd = generate_table_cell_with_content(winerySelectCopy);
+        tr.appendChild(wineryTd);
 
         let priceTd = generate_table_cell_with_content(generate_input_text_element("price", queryResult[i]["prezzo"]));
         tr.appendChild(priceTd);
@@ -217,61 +239,173 @@ document.addEventListener("DOMContentLoaded", function(){
             generate_wine_tbl_header(rows)
         });
     }
-    let producers = knex("cantina").select("*").orderBy("nome");
-    producers.then((rows) => {
-        generate_producer_list_and_select(rows);
-        if (document.body.contains(document.getElementById("cantinaDbContainer"))) {
-            generate_producer_tbl_body(rows);
-            document.dispatchEvent(new Event('producerTblCreated'));
-        }
-    });
+    if (!document.body.contains(document.getElementById("formContainer"))) {
+        let winerys = knex("cantina").select("*").orderBy("nome");
+        winerys.then((rows) => {
+            generate_winery_list_and_select(rows);
+            if (document.body.contains(document.getElementById("cantinaDbContainer"))) {
+                generate_winery_tbl_body(rows);
+                document.dispatchEvent(new Event('wineryTblCreated'));
+            }
+        });
+    } else {
+        knex("cantina").distinct("stato").then((rows) => generate_state_options(rows))
+        knex("cantina").distinct("regione").then((rows) => generate_region_options(rows))
+        knex("categorie").select("*").then((rows) => generate_category_page(rows))
+        document.dispatchEvent(new Event('categoryPageCreated'));
+    }
     if (document.body.contains(document.getElementById("viniDb"))) {
         let wines = knex("vini").select("*").orderBy("nome");
         wines.then((rows) => {
             generate_wine_tbl_body(rows);
-            append_producer_select();
+            append_winery_select();
             document.dispatchEvent(new Event('wineTblCreated'));
         });
     }
+
+    if (document.body.contains(document.getElementById("page")))
+        generate_printable_page()
 });
 
-function append_producer_select() {
-    let newWineProducerTd = document.getElementById("newWineProducerTd");  //TODO move these two lines
-    let newWineProducerSelect = producerSelect.cloneNode(true);
-    newWineProducerSelect.id = "newWineProducer";
-    newWineProducerTd.appendChild(newWineProducerSelect);
+function append_winery_select() {
+    let newWineWineryTd = document.getElementById("newWineWineryTd");  //TODO move these two lines
+    let newWineWinerySelect = winerySelect.cloneNode(true);
+    newWineWinerySelect.id = "newWineWinery";
+    newWineWineryTd.appendChild(newWineWinerySelect);
 }
 
 document.addEventListener("wineTblCreated", attachWineEventListener);
-document.addEventListener("producerTblCreated", attachProducerEventListener);
+document.addEventListener("wineryTblCreated", attachWineryEventListener);
+document.addEventListener("categoryPageCreated", attachCategoryEventListeners);
 
 function attachWineEventListener() {
     let addNewWineButton = document.getElementById("newWineAdd");
     addNewWineButton.addEventListener('click', addNewWine);
 }
 
-function attachProducerEventListener() {
-    let addNewProducerButton = document.getElementById("newProducerAdd");
-    addNewProducerButton.addEventListener('click', addNewProducer);
+function attachWineryEventListener() {
+    let addNewWineryButton = document.getElementById("newWineryAdd");
+    addNewWineryButton.addEventListener('click', addNewWinery);
+}
+
+function attachCategoryEventListeners() {
+    let addFormButton = document.getElementById("addFormButton");
+    addFormButton.addEventListener('click', () => addNewForm());
+}
+
+function generate_category_page(queryResult) {
+    knex("vini").select("nome", "annata", "cantina").where({listino: 1}).then(populateMultiSelect);
+    if (queryResult.length > 0) {
+        for (let i = 0; i < queryResult.length; i++) {
+            addNewForm(true);
+            let formId = "form" + (i+1);
+            let form = document.getElementById(formId);
+            form.querySelector("[name='categoryName']").value = queryResult[i]["nome"];
+            form.querySelector("[name='wineType']").value = queryResult[i]["vinificazione"];
+            form.querySelector("[name='wineColor']").value = queryResult[i]["colore"];
+            form.querySelector("[name='wineryState']").value = queryResult[i]["stato"];
+            form.querySelector("[name='wineryRegion']").value = queryResult[i]["regione"];
+            form.querySelector("[name='wineContains']").value = queryResult[i]["parole_chiave"];
+        }
+    }
+}
+
+function populateMultiSelect(queryResult) {
+    let select = document.getElementById("multiple-select");
+    for (let i = 0; i < queryResult.length; i++) {
+        let value = queryResult[i]["nome"] + ", " + queryResult[i]["annata"] + ", " + queryResult[i]["cantina"];
+        select.appendChild(generate_select_option(value));
+    }
+    multi(select, {
+        "enable_search": true,
+        "search_placeholder": "Cerca...",
+        "non_selected_header": "Vini selezionabili",
+        "selected_header": "Vini scelti",
+        "limit": -1,
+        "limit_reached": function () {},
+        "hide_empty_groups": false,
+    });
+}
+
+function addNewForm(inserted = false) {
+    let div = document.getElementById("formContainer");
+    let form = document.getElementById("form0");
+    let currentProgressiveNumber = parseInt(div.children[div.children.length - 2].id.replace( /^\D+/g, ''));
+    let newForm = form.cloneNode(true);
+    let formName = "Categoria_" + (currentProgressiveNumber + 1);
+    newForm.reset();
+    newForm.id = "form" + (currentProgressiveNumber + 1);
+    newForm.addEventListener('focusin', updateCurrentForm);
+    newForm.querySelector("[id='categoryName']").addEventListener('change', commitFormChanges);
+    newForm.querySelector("[id='categoryName']").value = formName;
+    newForm.querySelector("[id='wineType']").addEventListener('change', commitFormChanges);
+    newForm.querySelector("[id='wineColor']").addEventListener('change', commitFormChanges);
+    newForm.querySelector("[id='wineryState']").addEventListener('change', commitFormChanges);
+    newForm.querySelector("[id='wineryRegion']").addEventListener('change', commitFormChanges);
+    newForm.querySelector("[id='wineContains']").addEventListener('change', commitFormChanges);
+    newForm.querySelector("[id='removeCategory']").addEventListener('click', deleteForm);
+    div.insertBefore(newForm, div.children[div.children.length - 1]);
+    console.log(!inserted)
+    if (!inserted) {
+        console.log("Inserting");
+        knex("categorie").insert({nome: formName}).then();
+    }
+}
+
+function deleteForm(event) {
+    let form = event.target.parentNode.parentNode;
+    let name = form.querySelector("[name='categoryName']").value;
+    if (name !== "")
+        knex("categorie").where({nome: name}).del().then(form.remove());
+    else
+        form.remove();
+}
+
+function commitFormChanges(event) {
+    let form = event.target.parentNode.parentNode;
+    let updateQuery = {}
+    switch (event.target.id) {
+        case "categoryName":
+            updateQuery["nome"] = form.querySelector("[id='categoryName']").value;
+            break;
+        case "wineType":
+            updateQuery["vinificazione"] = form.querySelector("[id='wineType']").value;
+            break;
+        case "wineColor":
+            updateQuery["colore"] = form.querySelector("[id='wineColor']").value;
+            break;
+        case "wineryState":
+            updateQuery["stato"] = form.querySelector("[id='wineryState']").value;
+            break;
+        case "wineryRegion":
+            updateQuery["regione"] = form.querySelector("[id='wineryRegion']").value;
+            break;
+        case "wineContains":
+            updateQuery["parole_chiave"] = form.querySelector("[id='wineContains']").value;
+            break;
+    }
+    knex("categorie").where({
+        nome: currentFormName
+    }).update(updateQuery).then();
 }
 
 function deleteWine(event) {
     let row = event.target.parentNode.parentNode;
     let name = row.querySelector("[name='name']").value;
     let year = row.querySelector("[name='year']").value;
-    let producer = row.querySelector("[name='producer']").value;
+    let winery = row.querySelector("[name='winery']").value;
 
     knex("vini").where({
         nome: name,
         annata: year,
-        cantina: producer
+        cantina: winery
     }).del().then(() => ipc.send('force_reload'));
 }
 
 function addNewWine() {
     let name = document.getElementById('newWineName').value;
     let year = document.getElementById('newWineYear').value;
-    let producer = document.getElementById('newWineProducer').value;
+    let winery = document.getElementById('newWineWinery').value;
     let price = document.getElementById('newWinePrice').value;
     let type = document.getElementById('newWineType').value;
     let color = document.getElementById('newWineColor').value;
@@ -281,7 +415,7 @@ function addNewWine() {
         knex("vini").insert({
             nome: name,
             annata: year,
-            cantina: producer,
+            cantina: winery,
             prezzo: price,
             vinificazione: type,
             colore: color,
@@ -293,19 +427,16 @@ function addNewWine() {
 
 function commitWineChanges(event) {
     let row = event.target.parentNode.parentNode;
-    let name = row.querySelector("[name='name']").value;
-    let year = row.querySelector("[name='year']").value;
-    let producer = row.querySelector("[name='producer']").value;
     let updateQuery = {}
     switch (event.target.name) {
         case "name":
-            updateQuery["nome"] = name;
+            updateQuery["nome"] = row.querySelector("[name='name']").value;
             break;
         case "year":
-            updateQuery["annata"] = year;
+            updateQuery["annata"] = row.querySelector("[name='year']").value;
             break;
-        case "producer":
-            updateQuery["cantina"] = producer;
+        case "winery":
+            updateQuery["cantina"] = row.querySelector("[name='winery']").value;
             break;
         case "price":
             updateQuery["prezzo"] = row.querySelector("[name='price']").value;
@@ -326,11 +457,11 @@ function commitWineChanges(event) {
     knex("vini").where({
         nome: currentWineName,
         annata: currentWineYear,
-        cantina: currentWineProducer
+        cantina: currentWineWinery
     }).update(updateQuery).then();
 }
 
-function deleteProducer(event) {
+function deleteWinery(event) {
     let row = event.target.parentNode.parentNode;
     let name = row.querySelector("[name='name']").value;
     knex.raw("PRAGMA foreign_keys = ON;").then(() => {
@@ -340,10 +471,10 @@ function deleteProducer(event) {
     });
 }
 
-function addNewProducer() {
-    let name = document.getElementById('newProducerName').value;
-    let state = document.getElementById('newProducerState').value;
-    let region = document.getElementById('newProducerRegion').value;
+function addNewWinery() {
+    let name = document.getElementById('newWineryName').value;
+    let state = document.getElementById('newWineryState').value;
+    let region = document.getElementById('newWineryRegion').value;
 
     knex.raw("PRAGMA foreign_keys = ON;").then(() => {
         knex("cantina").insert({
@@ -354,13 +485,12 @@ function addNewProducer() {
     });
 }
 
-function commitProducerChanges(event) {
+function commitWineryChanges(event) {
     let row = event.target.parentNode.parentNode;
-    let name = row.querySelector("[name='name']").value;
     let updateQuery = {}
     switch (event.target.name) {
         case "name":
-            updateQuery["nome"] = name;
+            updateQuery["nome"] = row.querySelector("[name='name']").value;
             break;
         case "state":
             updateQuery["stato"] = row.querySelector("[name='state']").value;
@@ -372,7 +502,7 @@ function commitProducerChanges(event) {
     blockEvent = true;
     knex.raw("PRAGMA foreign_keys = ON;").then(() => {
         knex("cantina").where({
-            nome: currentProducerName
+            nome: currentWineryName
         }).update(updateQuery).then(() => blockEvent = false);
     });
 }
@@ -388,3 +518,315 @@ function manageError(error) {
         }, 9000);
     }
 }
+
+function generate_printable_page() {
+}
+
+var multi = (function() {
+    var disabled_limit = false; // This will prevent to reset the "disabled" because of the limit at every click
+
+    // Helper function to trigger an event on an element
+    var trigger_event = function(type, el) {
+        var e = document.createEvent("HTMLEvents");
+        e.initEvent(type, false, true);
+        el.dispatchEvent(e);
+    };
+
+    // Check if there is a limit and if is reached
+    var check_limit = function (select, settings) {
+        var limit = settings.limit;
+        if (limit > -1) {
+            // Count current selected
+            var selected_count = 0;
+            for (var i = 0; i < select.options.length; i++) {
+                if (select.options[i].selected) {
+                    selected_count++;
+                }
+            }
+
+            // Reached the limit
+            if (selected_count === limit) {
+                this.disabled_limit = true;
+
+                // Trigger the function (if there is)
+                if (typeof settings.limit_reached === "function") {
+                    settings.limit_reached();
+                }
+
+                // Disable all non-selected option
+                for (var i = 0; i < select.options.length; i++) {
+                    var opt = select.options[i];
+
+                    if (!opt.selected) {
+                        opt.setAttribute("disabled", true);
+                    }
+                }
+            } else if (this.disabled_limit) {
+                // Enable options (only if they weren't disabled on init)
+                for (var i = 0; i < select.options.length; i++) {
+                    var opt = select.options[i];
+
+                    if (opt.getAttribute("data-origin-disabled") === "false") {
+                        opt.removeAttribute("disabled");
+                    }
+                }
+
+                this.disabled_limit = false;
+            }
+        }
+    };
+
+    // Toggles the target option on the select
+    var toggle_option = function(select, event, settings) {
+        var option = select.options[event.target.getAttribute("multi-index")];
+
+        if (option.disabled) {
+            return;
+        }
+
+        option.selected = !option.selected;
+
+        check_limit(select, settings);
+
+        trigger_event("change", select);
+    };
+
+    // Refreshes an already constructed multi.js instance
+    var refresh_select = function(select, settings) {
+        // Clear columns
+        select.wrapper.selected.innerHTML = "";
+        select.wrapper.non_selected.innerHTML = "";
+
+        // Add headers to columns
+        if (settings.non_selected_header && settings.selected_header) {
+            var non_selected_header = document.createElement("div");
+            var selected_header = document.createElement("div");
+
+            non_selected_header.className = "header";
+            selected_header.className = "header";
+
+            non_selected_header.innerText = settings.non_selected_header;
+            selected_header.innerText = settings.selected_header;
+
+            select.wrapper.non_selected.appendChild(non_selected_header);
+            select.wrapper.selected.appendChild(selected_header);
+        }
+
+        // Get search value
+        if (select.wrapper.search) {
+            var query = select.wrapper.search.value;
+        }
+
+        // Current group
+        var item_group = null;
+        var current_optgroup = null;
+
+        // Loop over select options and add to the non-selected and selected columns
+        for (var i = 0; i < select.options.length; i++) {
+            var option = select.options[i];
+
+            var value = option.value;
+            var label = option.textContent || option.innerText;
+
+            var row = document.createElement("a");
+            row.tabIndex = 0;
+            row.className = "item";
+            row.innerText = label;
+            row.setAttribute("role", "button");
+            row.setAttribute("data-value", value);
+            row.setAttribute("multi-index", i);
+
+            if (option.disabled) {
+                row.className += " disabled";
+            }
+
+            // Add row to selected column if option selected
+            if (option.selected) {
+                row.className += " selected";
+                var clone = row.cloneNode(true);
+                select.wrapper.selected.appendChild(clone);
+            }
+
+            // Create group if entering a new optgroup
+            if (
+                option.parentNode.nodeName == "OPTGROUP" &&
+                option.parentNode != current_optgroup
+            ) {
+                current_optgroup = option.parentNode;
+                item_group = document.createElement("div");
+                item_group.className = "item-group";
+
+                if (option.parentNode.label) {
+                    var groupLabel = document.createElement("span");
+                    groupLabel.innerHTML = option.parentNode.label;
+                    groupLabel.className = "group-label";
+                    item_group.appendChild(groupLabel);
+                }
+
+                select.wrapper.non_selected.appendChild(item_group);
+            }
+
+            // Clear group if not inside optgroup
+            if (option.parentNode == select) {
+                item_group = null;
+                current_optgroup = null;
+            }
+
+            // Apply search filtering
+            if (
+                !query ||
+                (query && label.toLowerCase().indexOf(query.toLowerCase()) > -1)
+            ) {
+                // Append to group if one exists, else just append to wrapper
+                if (item_group != null) {
+                    item_group.appendChild(row);
+                } else {
+                    select.wrapper.non_selected.appendChild(row);
+                }
+            }
+        }
+
+        // Hide empty optgroups
+        if (settings.hide_empty_groups) {
+            var optgroups = document.getElementsByClassName('item-group');
+            for (var i = 0; i < optgroups.length; i++) {
+                // Hide optgroup if optgroup only contains a group label
+                if (optgroups[i].childElementCount < 2) {
+                    optgroups[i].style.display = 'none';
+                }
+            }
+        }
+    };
+
+    // Intializes and constructs an multi.js instance
+    var init = function(select, settings) {
+        /**
+         * Set up settings (optional parameter) and its default values
+         *
+         * Default values:
+         * enable_search : true
+         * search_placeholder : "Search..."
+         */
+        settings = typeof settings !== "undefined" ? settings : {};
+
+        settings["enable_search"] =
+            typeof settings["enable_search"] !== "undefined"
+                ? settings["enable_search"]
+                : true;
+        settings["search_placeholder"] =
+            typeof settings["search_placeholder"] !== "undefined"
+                ? settings["search_placeholder"]
+                : "Search...";
+        settings["non_selected_header"] =
+            typeof settings["non_selected_header"] !== "undefined"
+                ? settings["non_selected_header"]
+                : null;
+        settings["selected_header"] =
+            typeof settings["selected_header"] !== "undefined"
+                ? settings["selected_header"]
+                : null;
+        settings["limit"] =
+            typeof settings["limit"] !== "undefined"
+                ? parseInt(settings["limit"])
+                : -1;
+        if (isNaN(settings["limit"])) {
+            settings["limit"] = -1;
+        }
+        settings["hide_empty_groups"] =
+            typeof settings["hide_empty_groups"] !== "undefined"
+                ? settings["hide_empty_groups"]
+                : false;
+
+        // Check if already initalized
+        if (select.dataset.multijs != null) {
+            return;
+        }
+
+        // Make sure element is select and multiple is enabled
+        if (select.nodeName != "SELECT" || !select.multiple) {
+            return;
+        }
+
+        // Hide select
+        select.style.display = "none";
+        select.setAttribute("data-multijs", true);
+
+        // Start constructing selector
+        var wrapper = document.createElement("div");
+        wrapper.className = "multi-wrapper";
+
+        // Add search bar
+        if (settings.enable_search) {
+            var search = document.createElement("input");
+            search.className = "search-input";
+            search.type = "text";
+            search.setAttribute("placeholder", settings.search_placeholder);
+            search.setAttribute("title", settings.search_placeholder);
+
+            search.addEventListener("input", function() {
+                refresh_select(select, settings);
+            });
+
+            wrapper.appendChild(search);
+            wrapper.search = search;
+        }
+
+        // Add columns for selected and non-selected
+        var non_selected = document.createElement("div");
+        non_selected.className = "non-selected-wrapper";
+
+        var selected = document.createElement("div");
+        selected.className = "selected-wrapper";
+
+        // Add click handler to toggle the selected status
+        wrapper.addEventListener("click", function(event) {
+            if (event.target.getAttribute("multi-index")) {
+                toggle_option(select, event, settings);
+            }
+        });
+
+        // Add keyboard handler to toggle the selected status
+        wrapper.addEventListener("keypress", function(event) {
+            var is_action_key = event.keyCode === 32 || event.keyCode === 13;
+            var is_option = event.target.getAttribute("multi-index");
+
+            if (is_option && is_action_key) {
+                // Prevent the default action to stop scrolling when space is pressed
+                event.preventDefault();
+                toggle_option(select, event, settings);
+            }
+        });
+
+        wrapper.appendChild(non_selected);
+        wrapper.appendChild(selected);
+
+        wrapper.non_selected = non_selected;
+        wrapper.selected = selected;
+
+        select.wrapper = wrapper;
+
+        // Add multi.js wrapper after select element
+        select.parentNode.insertBefore(wrapper, select.nextSibling);
+
+        // Save current state
+        for (var i = 0; i < select.options.length; i++) {
+            var option = select.options[i];
+            option.setAttribute("data-origin-disabled", option.disabled);
+        }
+
+        // Check limit on initialization
+        check_limit(select, settings);
+
+        // Initialize selector with values from select element
+        refresh_select(select, settings);
+
+        // Refresh selector when select values change
+        select.addEventListener("change", function() {
+            refresh_select(select, settings);
+        });
+    };
+
+    return init;
+})();
+
+

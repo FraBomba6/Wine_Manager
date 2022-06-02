@@ -7,12 +7,14 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
     <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <title>Test</title>
+    <title>Gestore vini</title>
 </head>
 <body>
 <nav class="floating-menu vert-center">
-    <a href="index.html"><img class="menu-icon" src="../imgs/grapes.png" alt="Grapes icon"></a>
-    <a href="cantina.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
+    <a href="index.html"><img class="menu-icon" src="../imgs/wine-bottle-glass.png" alt="Wine icon"></a>
+    <a href="cantina.html"><img class="menu-icon winery" src="../imgs/village.png" alt="List icon"></a>
+    <a href="categories.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
+    <a href="list.html"><img class="menu-icon" src="../imgs/document-approve.png" alt="List icon"></a>
 </nav>
 <div id="viniDbContainer" class="dbContainer">
     <table id="viniDb"></table>
@@ -34,7 +36,7 @@
             <tr>
                 <td><textarea id="newWineName"></textarea></td>
                 <td><input type="number" value="1950" name="year" id="newWineYear"></td>
-                <td id="newWineProducerTd"></td>
+                <td id="newWineWineryTd"></td>
                 <td><textarea id="newWinePrice" name="price"></textarea></td>
                 <td>
                     <select id="newWineType">
