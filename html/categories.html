@@ -21,46 +21,15 @@
             <label for="categoryName">Nome della categoria:</label>
             <input type="text" id="categoryName" name="categoryName">
         </fieldset>
-        <fieldset>
-            <label for="wineType">Vinificazione</label>
-            <select id="wineType" name="wineType">
-                <option value=""></option>
-                <option value="fermo">Fermo</option>
-                <option value="frizzante">Frizzante</option>
-                <option value="spumante">Spumante</option>
-            </select>
-        </fieldset>
-        <fieldset>
-            <label for="wineColor">Colore</label>
-            <select id="wineColor" name="wineColor">
-                <option value=""></option>
-                <option value="rosso">Rosso</option>
-                <option value="bianco">Bianco</option>
-                <option value="rose">Rosé</option>
-            </select>
-        </fieldset>
-        <fieldset>
-            <label for="wineryState">Stato</label>
-            <select id="wineryState" name="wineryState">
-                <option value=""></option>
-            </select>
-        </fieldset>
-        <fieldset>
-            <label for="wineryRegion">Regione</label>
-            <select id="wineryRegion" name="wineryRegion">
-                <option value=""></option>
-            </select>
-        </fieldset>
-        <fieldset>
-            <label for="wineContains">Parole chiave (,)</label>
-            <input type="text" id="wineContains" name="wineContains">
+        <fieldset id='multiple-select-fieldset'>
+            <label for="multiple-select">Selezionare i vini:</label>
         </fieldset>
         <fieldset>
             <label for="removeCategory">Eliminare?</label>
             <input  type="button" id="removeCategory" value="Elimina">
         </fieldset>
     </form>
-    <div>
+    <div id="addDiv">
         <input type="button" id="addFormButton" value="Aggiungi">
     </div>
 </div>
