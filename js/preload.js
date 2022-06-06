@@ -12,6 +12,8 @@ let knex = require("knex")({
 let wineryArray = [];
 let winerySelect = null;
 
+let multiSelect = null;
+
 let blockEvent = false;
 let currentWineName = "";
 let currentWineYear = "";
@@ -36,24 +38,10 @@ function updateCurrentWinery(event) {
 }
 
 function updateCurrentForm(event) {
-    let form = event.target.parentNode.parentNode;
+    let form = event.target.parentNode;
+    while (form.nodeName !== "FORM")
+        form = form.parentNode;
     currentFormName = form.querySelector("[name='categoryName']").value;
-}
-
-function generate_state_options(queryResult) {
-    let select = document.getElementById("wineryState");
-    for(let i = 0; i < queryResult.length; i++) {
-        let option = generate_select_option(queryResult[i]["stato"]);
-        select.appendChild(option);
-    }
-}
-
-function generate_region_options(queryResult) {
-    let select = document.getElementById("wineryRegion");
-    for(let i = 0; i < queryResult.length; i++) {
-        let option = generate_select_option(queryResult[i]["regione"]);
-        select.appendChild(option);
-    }
 }
 
 function generate_select_option(value, toUpper=false) {
@@ -248,10 +236,13 @@ document.addEventListener("DOMContentLoaded", function(){
                 document.dispatchEvent(new Event('wineryTblCreated'));
             }
         });
-    } else {
-        knex("cantina").distinct("stato").then((rows) => generate_state_options(rows))
-        knex("cantina").distinct("regione").then((rows) => generate_region_options(rows))
-        knex("categorie").select("*").then((rows) => generate_category_page(rows))
+    } else if (!document.body.contains(document.getElementById("page_1"))) {
+        knex("vini")
+            .join('cantina', 'vini.cantina', 'cantina.nome')
+            .select("vini.nome", "annata", "vini.cantina", "cantina.stato", "cantina.regione", "vinificazione", "colore")
+            .where({listino: 1})
+            .then(populateMultiSelect);
+        knex("categorie").select('*').then(generate_category_page);
         document.dispatchEvent(new Event('categoryPageCreated'));
     }
     if (document.body.contains(document.getElementById("viniDb"))) {
@@ -263,8 +254,8 @@ document.addEventListener("DOMContentLoaded", function(){
         });
     }
 
-    if (document.body.contains(document.getElementById("page")))
-        generate_printable_page()
+    if (document.body.contains(document.getElementById("final-document")))
+        knex("categorie").select('*').then(generate_printable_page)
 });
 
 function append_winery_select() {
@@ -294,29 +285,40 @@ function attachCategoryEventListeners() {
 }
 
 function generate_category_page(queryResult) {
-    knex("vini").select("nome", "annata", "cantina").where({listino: 1}).then(populateMultiSelect);
-    if (queryResult.length > 0) {
-        for (let i = 0; i < queryResult.length; i++) {
+    for (let i = 0; i < queryResult.length; i++)
+        knex("vini_categoria").select('*').where({categoria: queryResult[i]["nome"]}).then((rows) => {
             addNewForm(true);
-            let formId = "form" + (i+1);
+            let formId = "form" + (i + 1);
             let form = document.getElementById(formId);
             form.querySelector("[name='categoryName']").value = queryResult[i]["nome"];
-            form.querySelector("[name='wineType']").value = queryResult[i]["vinificazione"];
-            form.querySelector("[name='wineColor']").value = queryResult[i]["colore"];
-            form.querySelector("[name='wineryState']").value = queryResult[i]["stato"];
-            form.querySelector("[name='wineryRegion']").value = queryResult[i]["regione"];
-            form.querySelector("[name='wineContains']").value = queryResult[i]["parole_chiave"];
-        }
-    }
+            if (rows.length > 0) {
+                for (let j = 0; j < rows.length; j++) {
+                    let wine_name = rows[j]["nome_vino"] + ", " + rows[j]["annata_vino"] + ", " + rows[j]["cantina_vino"];
+                    wine_name = wine_name.replaceAll("'", "\'");
+                    wine_name = wine_name.replaceAll('"', "\\\"");
+                    let selector = "[data-value*=\"" + wine_name + "\"]";
+                    form.querySelector(selector).click();
+                }
+            }
+        });
 }
 
 function populateMultiSelect(queryResult) {
-    let select = document.getElementById("multiple-select");
+    multiSelect = document.createElement("select");
+    multiSelect.id = "multiselect";
+    multiSelect.multiple = true;
     for (let i = 0; i < queryResult.length; i++) {
         let value = queryResult[i]["nome"] + ", " + queryResult[i]["annata"] + ", " + queryResult[i]["cantina"];
-        select.appendChild(generate_select_option(value));
+        let selectOption = generate_select_option(value);
+        selectOption.value = value + ", " + queryResult[i]["vinificazione"] + ", " + queryResult[i]["colore" ] + ", " + queryResult[i]["stato"] + ", " + queryResult[i]["regione"];
+        multiSelect.appendChild(selectOption);
     }
-    multi(select, {
+}
+
+function generateMultiSelect (parent) {
+    let element = multiSelect.cloneNode(true);
+    parent.appendChild(element)
+    multi(element, {
         "enable_search": true,
         "search_placeholder": "Cerca...",
         "non_selected_header": "Vini selezionabili",
@@ -338,17 +340,43 @@ function addNewForm(inserted = false) {
     newForm.addEventListener('focusin', updateCurrentForm);
     newForm.querySelector("[id='categoryName']").addEventListener('change', commitFormChanges);
     newForm.querySelector("[id='categoryName']").value = formName;
-    newForm.querySelector("[id='wineType']").addEventListener('change', commitFormChanges);
-    newForm.querySelector("[id='wineColor']").addEventListener('change', commitFormChanges);
-    newForm.querySelector("[id='wineryState']").addEventListener('change', commitFormChanges);
-    newForm.querySelector("[id='wineryRegion']").addEventListener('change', commitFormChanges);
-    newForm.querySelector("[id='wineContains']").addEventListener('change', commitFormChanges);
+    generateMultiSelect(newForm.querySelector("[id='multiple-select-fieldset']"));
+    newForm.querySelector("[class='non-selected-wrapper']").addEventListener('click', commitFormChanges);
+    newForm.querySelector("[class='selected-wrapper']").addEventListener('click', commitFormChanges);
     newForm.querySelector("[id='removeCategory']").addEventListener('click', deleteForm);
     div.insertBefore(newForm, div.children[div.children.length - 1]);
-    console.log(!inserted)
     if (!inserted) {
-        console.log("Inserting");
         knex("categorie").insert({nome: formName}).then();
+    }
+}
+
+function commitFormChanges(event) {
+    if (event.target.className === "item" && event.pointerId !== -1) {
+        let wine = event.target.innerHTML.split(",");
+        for (let i = 0; i < 3; i++)
+            wine[i] = wine[i].trim();
+        knex("vini_categoria").insert({
+            nome_vino: wine[0],
+            annata_vino: wine[1],
+            cantina_vino: wine[2],
+            categoria: currentFormName
+        }).then();
+    }
+    else if (event.target.className === "item selected" && event.pointerId !== -1) {
+        let wine = event.target.innerHTML.split(",");
+        for (let i = 0; i < 3; i++)
+            wine[i] = wine[i].trim();
+        knex("vini_categoria").where({
+            nome_vino: wine[0],
+            annata_vino: wine[1],
+            cantina_vino: wine[2],
+            categoria: currentFormName
+        }).del().then();
+    }
+    else if (event.target.id ==='categoryName') {
+        knex.raw("PRAGMA foreign_keys = ON;").then(() => knex("categorie").where({
+            nome: currentFormName
+        }).update({nome: event.target.value}).then());
     }
 }
 
@@ -356,37 +384,11 @@ function deleteForm(event) {
     let form = event.target.parentNode.parentNode;
     let name = form.querySelector("[name='categoryName']").value;
     if (name !== "")
-        knex("categorie").where({nome: name}).del().then(form.remove());
+        knex.raw("PRAGMA foreign_keys = ON;").then(() => {
+            knex("categorie").where({nome: name}).del().then(form.remove());
+        });
     else
         form.remove();
-}
-
-function commitFormChanges(event) {
-    let form = event.target.parentNode.parentNode;
-    let updateQuery = {}
-    switch (event.target.id) {
-        case "categoryName":
-            updateQuery["nome"] = form.querySelector("[id='categoryName']").value;
-            break;
-        case "wineType":
-            updateQuery["vinificazione"] = form.querySelector("[id='wineType']").value;
-            break;
-        case "wineColor":
-            updateQuery["colore"] = form.querySelector("[id='wineColor']").value;
-            break;
-        case "wineryState":
-            updateQuery["stato"] = form.querySelector("[id='wineryState']").value;
-            break;
-        case "wineryRegion":
-            updateQuery["regione"] = form.querySelector("[id='wineryRegion']").value;
-            break;
-        case "wineContains":
-            updateQuery["parole_chiave"] = form.querySelector("[id='wineContains']").value;
-            break;
-    }
-    knex("categorie").where({
-        nome: currentFormName
-    }).update(updateQuery).then();
 }
 
 function deleteWine(event) {
@@ -519,7 +521,73 @@ function manageError(error) {
     }
 }
 
-function generate_printable_page() {
+function generate_printable_page(queryResult) {
+    // Regole di impaginazione:
+    // - prima pagina, la colonna di destra è la prima
+    // - segue la colonna di sinistra del retro della seconda pagina
+    // - si ripete questo andamento fino alla pagina centrale
+    // - segue la colonna di destra del retro della pagina centrale
+    // - in fine, la colonna di sinistra del retro della pagina precedente
+    // in ogni colonna ci stanno 26 righe
+    let page = document.createElement("div");
+    page.classList.toggle("page");
+    let pageGrid = document.createElement("div");
+    pageGrid.classList.toggle("grid-container");
+    page.appendChild(pageGrid);
+    document.body.appendChild(page);
+    let colCounter = 2;
+    let rowCounter = 0;
+    const MAXROWS = 26;
+
+    queryResult.forEach((category) => {
+        let gridCellTitle = document.createElement("div")
+        gridCellTitle.textContent = category.nome;
+        gridCellTitle.style.gridColumn = "" + colCounter;
+        gridCellTitle.classList.toggle("title-cell");
+        let borderImg = document.createElement("img");
+        borderImg.src = "../imgs/title_border.png";
+        borderImg.style.gridColumn = "" + colCounter;
+        knex.select("vini.nome as nome", "vini.annata as annata", "vini.cantina as cantina", "vini.prezzo as prezzo", "vini_categoria.categoria as categoria")
+            .from("vini_categoria")
+            .join("vini", function () {
+                this
+                    .on("vini.nome", "=", "vini_categoria.nome_vino")
+                    .andOn("vini.annata", "=", "vini_categoria.annata_vino")
+                    .andOn("vini.cantina", "=", "vini_categoria.cantina_vino")
+            })
+            .where({categoria: category.nome})
+            .then((rows) => {
+                gridCellTitle.style.gridRow = "" + ++rowCounter;
+                pageGrid.appendChild(gridCellTitle);
+                borderImg.style.gridRow = "" + ++rowCounter;
+                pageGrid.appendChild(borderImg);
+                rows.forEach((row) => {
+                    let gridCell = document.createElement("div");
+                    gridCell.style.gridColumn = "" + colCounter;
+                    gridCell.classList.toggle("subgrid-container");
+                    let subgridCellRow1 = document.createElement("div");
+                    subgridCellRow1.textContent = row.nome + " " + row.annata;
+                    subgridCellRow1.classList.toggle("wine-cell");
+                    gridCell.appendChild(subgridCellRow1);
+                    let subgridCellRow2 = document.createElement("div");
+                    subgridCellRow2.classList.toggle("producer-cell");
+                    subgridCellRow2.textContent = row.cantina;
+                    gridCell.appendChild(subgridCellRow2);
+                    let subgridCellPrice = document.createElement("div");
+                    subgridCellPrice.classList.toggle("price-cell");
+                    subgridCellPrice.textContent = "€ " + parseFloat(row.prezzo).toFixed(2);
+                    gridCell.appendChild(subgridCellPrice);
+
+                    gridCell.style.gridRow = "" + ++rowCounter;
+                    pageGrid.appendChild(gridCell);
+                });
+                let emptyCell = document.createElement("div");
+                emptyCell.classList.toggle("empty-cell");
+                emptyCell.style.gridColumn = "" + colCounter;
+                emptyCell.style.gridRow = "" + ++rowCounter;
+                pageGrid.appendChild(emptyCell);
+            });
+    });
 }
 
 var multi = (function() {
@@ -675,7 +743,7 @@ var multi = (function() {
             // Apply search filtering
             if (
                 !query ||
-                (query && label.toLowerCase().indexOf(query.toLowerCase()) > -1)
+                (query.split(" ").every(item => value.toLowerCase().indexOf(item.toLowerCase()) > -1))
             ) {
                 // Append to group if one exists, else just append to wrapper
                 if (item_group != null) {
@@ -743,7 +811,7 @@ var multi = (function() {
         }
 
         // Make sure element is select and multiple is enabled
-        if (select.nodeName != "SELECT" || !select.multiple) {
+        if (select.nodeName !== "SELECT" || !select.multiple) {
             return;
         }
 
@@ -828,5 +896,3 @@ var multi = (function() {
 
     return init;
 })();
-
-

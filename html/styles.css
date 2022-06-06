@@ -80,7 +80,7 @@ form {
     margin: 0.5% 0;
 }
 
-#formContainer div {
+#addDiv {
     margin-top: 2%;
     text-align: center;
     width: 100%;
@@ -89,19 +89,18 @@ form {
     transform: translateX(-50%);
 }
 
-#form0 {
-    display: none;
-}
-
 fieldset {
-    display: inline;
     border: none;
     margin: 0;
     padding: 1% 0.1%;
 }
 
 fieldset input[type="text"] {
-    width: 100%;
+    width: 50%;
+}
+
+#form0 {
+    display: none;
 }
 
 .modifierContainer {
@@ -115,7 +114,7 @@ fieldset input[type="text"] {
 }
 
 div:not(.modifierContainer) table tbody tr:hover {
-    border-bottom: 4px solid rgba(87, 28, 30, 1);;
+    border-bottom: 4px solid rgba(87, 28, 30, 1);
 }
 
 tbody tr {
@@ -162,6 +161,7 @@ textarea[name="price"], input[name="year"] {
     display: inline-block;
     height: 200px;
     overflow-y: scroll;
+    overflow-x: hidden;
     padding: 10px;
     vertical-align: top;
     width: 50%;
