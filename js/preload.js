@@ -4,7 +4,7 @@ const ipc = electron.ipcRenderer;
 let knex = require("knex")({
     client: "sqlite3",
     connection: {
-        filename: "./resources/vini.db"
+        filename: "./results/vini.db"
     },
     useNullAsDefault: true
 });
@@ -270,7 +270,11 @@ document.addEventListener("DOMContentLoaded", function(){
         print.addEventListener('click', () => {
             ipc.send('print');
         })
-        knex("categorie").select('*').orderBy('posizione').then(generate_printable_page);
+        knex("categorie").select('*').orderBy('posizione').then((categories) => {
+            knex("vini_categoria").count("nome_vino as n").then((result) => {
+                generate_printable_page(categories, categories.length, result[0].n)
+            })
+        });
     }
 });
 
@@ -570,37 +574,47 @@ function manageError(error) {
     }
 }
 
-function generate_printable_page(queryResult) {
-    let page = document.createElement("div");
-    page.classList.toggle("page");
-    let pageGrid = document.createElement("div");
-    pageGrid.classList.toggle("grid-container");
-    page.appendChild(pageGrid);
-    document.body.appendChild(page);
-
+function generate_printable_page(queryResult, nCategories, nEntries) {
+    const PAGES = compute_pages_number()
+    const COLUMNS = PAGES * 4
+    let columnCounter = 1
+    let pageCounter = 1
+    let colCounter = 2;
+    let rowCounter = 0;
+    let effectiveRows = 0;
+    const MAXROWS = 37;
+    // let page = document.createElement("div");
+    // page.classList.toggle("page");
+    // let pageGrid = document.createElement("div");
+    // pageGrid.classList.toggle("grid-container");
+    // page.appendChild(pageGrid);
+    // document.body.appendChild(page);
+    create_pages()
     let itTitle = document.getElementById("it-title");
     let itBody = document.getElementById("it-body");
     let enTitle = document.getElementById("en-title");
     let enBody = document.getElementById("en-body");
+    let pageGrid = document.getElementById("pageGrid-1");
     pageGrid.appendChild(itTitle);
     pageGrid.appendChild(itBody);
     pageGrid.appendChild(enTitle);
     pageGrid.appendChild(enBody);
 
-    let current_page = 1
-    let colCounter = 2;
-    let rowCounter = 0;
-    let effectiveRows = 0;
-    const MAXROWS = 37;
+    function compute_pages_number() {
+        return Math.ceil((Math.ceil((nCategories * 3 + nEntries) / 37) + 1) / 4)
+    }
 
-    function change_page () {
-        current_page += 1;
-        page = document.createElement("div");
-        page.classList.toggle("page");
-        pageGrid = document.createElement("div");
-        pageGrid.classList.toggle("grid-container");
-        page.appendChild(pageGrid);
-        document.body.appendChild(page);
+    function create_pages() {
+        for (let i = 0; i < PAGES * 2 ; i++) {
+            let page = document.createElement("div");
+            page.classList.toggle("page");
+            page.id = "page-" + (i + 1);
+            let pageGrid = document.createElement("div");
+            pageGrid.classList.toggle("grid-container");
+            pageGrid.id = "pageGrid-" + (i + 1);
+            page.appendChild(pageGrid);
+            document.body.appendChild(page);
+        }
     }
 
     function change_column() {
@@ -616,14 +630,16 @@ function generate_printable_page(queryResult) {
     }
 
     function evaluate_row_status(param) {
-        if (rowCounter > param && colCounter === 2) {
+        if (rowCounter > param) {
+            columnCounter += 1;
             change_column();
-            reset_row();
-            change_page();
-            return true;
-        }
-        else if (rowCounter > param && colCounter === 1) {
-            change_column();
+            if (columnCounter <= COLUMNS / 2) {
+                pageCounter += 1
+                pageGrid = document.getElementById("pageGrid-" + pageCounter)
+            } else if (columnCounter > 1 + COLUMNS / 2) {
+                pageCounter -= 1
+                pageGrid = document.getElementById("pageGrid-" + pageCounter)
+            }
             reset_row();
             return true;
         }
@@ -649,7 +665,7 @@ function generate_printable_page(queryResult) {
             .orderBy(["cantina", "prezzo"])
             .then((rows) => {
                 evaluate_row_status(MAXROWS - 3);
-                if (current_page === 1) {
+                if (pageCounter === 1) {
                     gridCellTitle.style.margin = "3px 0";
                     borderImg.style.marginBottom = "23px";
                 }
