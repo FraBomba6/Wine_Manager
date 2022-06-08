@@ -16,22 +16,24 @@
     <a href="categories.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
     <a href="list.html"><img class="menu-icon" src="../imgs/document-approve.png" alt="List icon"></a>
 </nav>
-<div id="gridContainer" class="container">
-    <div id="formContainer0" class="box" draggable="true">
-        <form id="form0">
-            <fieldset>
-                <label for="categoryName">Nome della categoria:</label>
-                <input type="text" id="categoryName" name="categoryName">
-            </fieldset>
-            <fieldset id='multiple-select-fieldset'>
-                <label for="multiple-select">Selezionare i vini:</label>
-            </fieldset>
-            <fieldset>
-                <label for="removeCategory">Eliminare?</label>
-                <input  type="button" id="removeCategory" value="Elimina">
-            </fieldset>
-        </form>
-    </div>
+<div id="formContainer">
+    <form id="form0">
+        <fieldset>
+            <label for="categoryName">Nome della categoria:</label>
+            <input type="text" id="categoryName" name="categoryName">
+        </fieldset>
+        <fieldset>
+            <label for="position">Posizione:</label>
+            <input type="number" min="1" id="position" name="position">
+        </fieldset>
+        <fieldset id='multiple-select-fieldset'>
+            <label for="multiple-select">Selezionare i vini:</label>
+        </fieldset>
+        <fieldset>
+            <label for="removeCategory">Eliminare?</label>
+            <input  type="button" id="removeCategory" value="Elimina">
+        </fieldset>
+    </form>
     <div id="addDiv">
         <input type="button" id="addFormButton" value="Aggiungi">
     </div>

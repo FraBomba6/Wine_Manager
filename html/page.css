@@ -34,10 +34,13 @@ body {
     font-size: 9pt;
     border-bottom: rgb(87, 28, 30) dashed 1px;
     padding: 1px;
+    height: 28px;
 }
 
 .title-cell {
     text-align: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .empty-cell {
@@ -48,7 +51,7 @@ body {
 #border-img {
     width: 100%;
     height: 4px;
-    margin-bottom: 6px;
+    margin-bottom: 25px;
 }
 
 .producer-cell {

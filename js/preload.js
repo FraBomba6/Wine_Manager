@@ -270,7 +270,7 @@ document.addEventListener("DOMContentLoaded", function(){
         print.addEventListener('click', () => {
             ipc.send('print');
         })
-        knex("categorie").select('*').then(generate_printable_page);
+        knex("categorie").select('*').orderBy('posizione').then(generate_printable_page);
     }
 });
 
@@ -307,6 +307,7 @@ function generate_category_page(queryResult) {
             let formId = "form" + (i + 1);
             let form = document.getElementById(formId);
             form.querySelector("[name='categoryName']").value = queryResult[i]["nome"];
+            form.querySelector("#position").value = queryResult[i]["posizione"];
             if (rows.length > 0) {
                 for (let j = 0; j < rows.length; j++) {
                     knex("vini").select('annata').where({nome: rows[j]["nome_vino"], cantina: rows[j]["cantina_vino"]}).then((row) => {
@@ -370,9 +371,11 @@ function addNewForm(inserted = false) {
     newForm.querySelector("[class='non-selected-wrapper']").addEventListener('click', commitFormChanges);
     newForm.querySelector("[class='selected-wrapper']").addEventListener('click', commitFormChanges);
     newForm.querySelector("[id='removeCategory']").addEventListener('click', deleteForm);
+    newForm.querySelector("#position").value = currentProgressiveNumber + 1;
+    newForm.querySelector("#position").addEventListener('change', commitFormChanges);
     div.insertBefore(newForm, div.children[div.children.length - 1]);
     if (!inserted) {
-        knex("categorie").insert({nome: formName}).then();
+        knex("categorie").insert({nome: formName, posizione: currentProgressiveNumber + 1}).then();
     }
 }
 
@@ -412,6 +415,12 @@ function commitFormChanges(event) {
         knex.raw("PRAGMA foreign_keys = ON;").then(() => knex("categorie").where({
             nome: currentFormName
         }).update({nome: event.target.value}).then(() => blockEvent = false));
+    }
+    else if (event.target.id === "position") {
+        blockEvent = true;
+        knex.raw("PRAGMA foreign_keys = ON;").then(() => knex("categorie").where({
+            nome: currentFormName
+        }).update({posizione: event.target.value}).then(() => blockEvent = false));
     }
 }
 
@@ -578,12 +587,14 @@ function generate_printable_page(queryResult) {
     pageGrid.appendChild(enTitle);
     pageGrid.appendChild(enBody);
 
+    let current_page = 1
     let colCounter = 2;
     let rowCounter = 0;
     let effectiveRows = 0;
-    const MAXROWS = 36;
+    const MAXROWS = 37;
 
     function change_page () {
+        current_page += 1;
         page = document.createElement("div");
         page.classList.toggle("page");
         pageGrid = document.createElement("div");
@@ -605,13 +616,13 @@ function generate_printable_page(queryResult) {
     }
 
     function evaluate_row_status(param) {
-        if (effectiveRows > param && colCounter === 2) {
+        if (rowCounter > param && colCounter === 2) {
             change_column();
             reset_row();
             change_page();
             return true;
         }
-        else if (effectiveRows > param && colCounter === 1) {
+        else if (rowCounter > param && colCounter === 1) {
             change_column();
             reset_row();
             return true;
@@ -638,6 +649,10 @@ function generate_printable_page(queryResult) {
             .orderBy(["cantina", "prezzo"])
             .then((rows) => {
                 evaluate_row_status(MAXROWS - 3);
+                if (current_page === 1) {
+                    gridCellTitle.style.margin = "3px 0";
+                    borderImg.style.marginBottom = "23px";
+                }
                 gridCellTitle.style.gridColumn = "" + colCounter;
                 borderImg.style.gridColumn = "" + colCounter;
                 gridCellTitle.style.gridRow = "" + ++rowCounter;
@@ -646,7 +661,7 @@ function generate_printable_page(queryResult) {
                 pageGrid.appendChild(borderImg);
                 effectiveRows += 1;
                 rows.forEach((row) => {
-                    evaluate_row_status(MAXROWS - 2);
+                    evaluate_row_status(MAXROWS - 1);
                     let gridCell = document.createElement("div");
                     gridCell.style.gridColumn = "" + colCounter;
                     gridCell.classList.toggle("subgrid-container");
@@ -656,10 +671,12 @@ function generate_printable_page(queryResult) {
                     else
                         subgridCellRow1.textContent = row.nome;
                     subgridCellRow1.classList.toggle("wine-cell");
+                    subgridCellRow1.style.height = "15px";
                     gridCell.appendChild(subgridCellRow1);
                     let subgridCellRow2 = document.createElement("div");
                     subgridCellRow2.classList.toggle("producer-cell");
                     subgridCellRow2.textContent = row.cantina + " - " + row.regione + ", " + row.stato;
+                    subgridCellRow2.style.height = "11px";
                     gridCell.appendChild(subgridCellRow2);
                     let subgridCellPrice = document.createElement("div");
                     subgridCellPrice.classList.toggle("price-cell");
@@ -670,7 +687,7 @@ function generate_printable_page(queryResult) {
                     effectiveRows += 1;
                     pageGrid.appendChild(gridCell);
                 });
-                if (!evaluate_row_status(MAXROWS - 2)) {
+                if (!evaluate_row_status(MAXROWS - 4)) {
                     let emptyCell = document.createElement("div");
                     emptyCell.classList.toggle("empty-cell");
                     emptyCell.style.gridColumn = "" + colCounter;
