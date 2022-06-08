@@ -4,7 +4,7 @@ const ipc = electron.ipcRenderer;
 let knex = require("knex")({
     client: "sqlite3",
     connection: {
-        filename: "./vini.db"
+        filename: "./resources/vini.db"
     },
     useNullAsDefault: true
 });

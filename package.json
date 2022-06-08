@@ -29,20 +29,26 @@
   },
   "build": {
     "appId": "com.winemanager",
-    "mac": {
-      "category": "work"
-    },
     "extraResources": ["vini.db"],
     "win": {
+      "icon": "./imgs/icon.png",
       "target": [
         {
           "target": "portable",
           "arch": [
-            "x64",
-            "ia32"
+            "x64"
           ]
         }
       ]
+    },
+    "mac": {
+      "target": {
+        "target": "default",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
     }
   }
 }

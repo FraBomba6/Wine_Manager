@@ -127,6 +127,11 @@ textarea {
     width: 95%;
     resize: none;
     overflow: hidden;
+    font-family: 'Cabin', sans-serif;
+}
+
+input {
+    font-family: 'Cabin', sans-serif;
 }
 
 textarea[name="price"], input[name="year"] {
