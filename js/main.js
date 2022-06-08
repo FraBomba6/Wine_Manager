@@ -22,6 +22,9 @@ app.whenReady().then(() => {
     ipcMain.on("force_reload", () => {
         win.reload();
     });
+    ipcMain.on("print", () => {
+        win.webContents.print();
+    });
 });
 
 app.on('window-all-closed', () => {

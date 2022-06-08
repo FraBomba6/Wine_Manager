@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cabin&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
     <title>Gestore vini</title>
 </head>
 <body>
@@ -15,20 +16,22 @@
     <a href="categories.html"><img class="menu-icon" src="../imgs/note-book.png" alt="List icon"></a>
     <a href="list.html"><img class="menu-icon" src="../imgs/document-approve.png" alt="List icon"></a>
 </nav>
-<div id="formContainer">
-    <form id="form0">
-        <fieldset>
-            <label for="categoryName">Nome della categoria:</label>
-            <input type="text" id="categoryName" name="categoryName">
-        </fieldset>
-        <fieldset id='multiple-select-fieldset'>
-            <label for="multiple-select">Selezionare i vini:</label>
-        </fieldset>
-        <fieldset>
-            <label for="removeCategory">Eliminare?</label>
-            <input  type="button" id="removeCategory" value="Elimina">
-        </fieldset>
-    </form>
+<div id="gridContainer" class="container">
+    <div id="formContainer0" class="box" draggable="true">
+        <form id="form0">
+            <fieldset>
+                <label for="categoryName">Nome della categoria:</label>
+                <input type="text" id="categoryName" name="categoryName">
+            </fieldset>
+            <fieldset id='multiple-select-fieldset'>
+                <label for="multiple-select">Selezionare i vini:</label>
+            </fieldset>
+            <fieldset>
+                <label for="removeCategory">Eliminare?</label>
+                <input  type="button" id="removeCategory" value="Elimina">
+            </fieldset>
+        </form>
+    </div>
     <div id="addDiv">
         <input type="button" id="addFormButton" value="Aggiungi">
     </div>

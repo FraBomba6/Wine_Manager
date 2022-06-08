@@ -5,7 +5,8 @@
   "main": "js/main.js",
   "scripts": {
     "start": "electron .",
-    "rebuild": "electron-rebuild -f -w sqlite3"
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
   },
   "repository": {
     "type": "git",
@@ -19,11 +20,29 @@
   "homepage": "https://github.com/FraBomba6/Wine_Manager#readme",
   "devDependencies": {
     "electron": "^18.1.0",
-    "electron-rebuild": "^3.2.7"
+    "electron-packager": "^15.5.1",
+    "electron-builder": "^23.0.3"
   },
   "dependencies": {
     "knex": "^2.0.0",
-    "sqlite3": "^5.0.6",
-    "multi.js": "^0.5.3"
+    "sqlite3": "^5.0.6"
+  },
+  "build": {
+    "appId": "com.winemanager",
+    "mac": {
+      "category": "work"
+    },
+    "extraResources": ["vini.db"],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
+    }
   }
 }

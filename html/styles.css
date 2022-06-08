@@ -1,5 +1,6 @@
 body {
     background-color: rgba(87, 28, 30, 1);
+    font-family: 'Cabin', sans-serif;
 }
 
 .menu-icon {
@@ -147,6 +148,15 @@ textarea[name="price"], input[name="year"] {
 
 #newWineError.fadeOut, #newWineryError.fadeOut{
     opacity: 0;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.box {
+    cursor: move;
 }
 
 .multi-wrapper {
